@@ -19,6 +19,8 @@
 # clear python path to prevent mixed up of python packages
 date
 unset PYTHONPATH
+# set to false if not running for nextflow version
+run_nextflow=TRUE
 # get command line arguments
 while [[ "$#" -gt 0 ]]; do
         if [[ $1 == "run"* ]];then
@@ -108,9 +110,13 @@ img_name=rnaseq-pipe-container.sif
 
 echo -e "\nUsing singularity image and scripts in:" ${img_dir} "\n"
 
+if [[ $run_nextflow == "TRUE" ]]; then
 # getting Nextflow configuration
 #skip load_nextflow line
 source <(grep -v "load_nextflow" scripts/nextflow_config_var.config )
+else
+source scripts/slurm_config_var.sh
+fi
 
 echo -e "Options used to run:"
 echo time="$time"
