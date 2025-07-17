@@ -17,6 +17,7 @@
 # bash scripts/run_shiny_analysis.sh time=1-2:20:30
 
 # clear python path to prevent mixed up of python packages
+date
 unset PYTHONPATH
 # get command line arguments
 while [[ "$#" -gt 0 ]]; do
@@ -107,8 +108,9 @@ img_name=rnaseq-pipe-container.sif
 
 echo -e "\nUsing singularity image and scripts in:" ${img_dir} "\n"
 
-# getting SLURM configuration
-source $img_dir/scripts/slurm_config_var.sh
+# getting Nextflow configuration
+#skip load_nextflow line
+source <(grep -v "load_nextflow" scripts/nextflow_config_var.config )
 
 echo -e "Options used to run:"
 echo time="$time"
@@ -125,16 +127,24 @@ port_num=$(singularity exec $img_dir/$img_name comm -23 \
 # if filepath not specified then bind host root
 if [[ -z "$filepath" ]];then
 	bind_filepath="--bind /:/root"
+	filepath=/
 else
         # get the long path
         filepath=$(readlink -f $filepath)
 	bind_filepath="--bind $filepath:/filepath"
 fi
 
+# if filepath doesn't exist, exit with error
+if [[ ! -e "$filepath" ]]; then
+        echo -e "\n\n Error: check your filepath.\n\n"
+        exit 1
+fi
+
 # Activate environment where shiny is installed and go to "app.R" directory
 export port_num filepath max_nsamples img_dir proj_dir img_name bind_filepath
 jid=$(sbatch --time=$time \
 	--partition=$general_partition \
+	$addtl_opt \
 	--export=port_num,filepath,max_nsamples,img_dir,proj_dir,img_name,bind_filepath \
 	--output=run_shiny_analysis.out \
 	--wrap "/bin/sh $img_dir/scripts/run_listen_app.sh"| cut -f 4 -d' ')
@@ -146,19 +156,20 @@ echo -e "\n\nYou need to have x11 display server such as Xming running.\n"
 status=$(sacct -j $jid -Xn -Po state)
 node=$(sacct -j $jid -Xn -Po nodelist)
 while [[ $status != "RUNNING"* ]];do
-	echo -e "Please wait finding available node and setting up shiny app ....\n"
-	sleep 10
-	#status=$(squeue -j $jid -o "%t" -h)
-	#node=$(squeue -j $jid -o "%R" -h)
-	status=$(sacct -j $jid -Xn -Po state)
-	node=$(sacct -j $jid -Xn -Po nodelist)
+       #status=$(squeue -j $jid -o "%t" -h)
+       #node=$(squeue -j $jid -o "%R" -h)
+       status=$(sacct -j $jid -Xn -Po state)
+       node=$(sacct -j $jid -Xn -Po nodelist)
+	echo -e "Please wait...\n"
+	sleep 5
 done
 
 # Extra check to make sure shiny app is already at listening point
 # Put this in because sometimes it takes time to load libraries
-while true; do 
+while true; do
 	# get the last line of run_shiny_analysis.out
-	last_line=$(tail -n 1 run_shiny_analysis.out)
+       if [ -f run_shiny_analysis.out ]; then
+	  last_line=$(tail -n 1 run_shiny_analysis.out)
 	# exit if shiny fail to load
 	if grep -q "Execution halted" "run_shiny_analysis.out"; then exit 1; fi
 	# check if it contains listening
@@ -166,6 +177,9 @@ while true; do
 		break
 	fi
 	sleep 5
+	else
+	last_line=""
+	fi
 done
 
 # adding configuration to send signal every four minutes (240 secs)
@@ -189,4 +203,6 @@ ssh -tX "$node" 'export port_num='"'$port_num'"';
 ## this should not be run until firefox is closed
 scancel $jid
 # deleting the last lines which is server alive text
-head -n -1 ~/.ssh/config > temp && mv temp ~/.ssh/config
+head -n -1 ~/.ssh/config > temp && cp temp ~/.ssh/config && rm temp
+# make permission stricter
+chmod 600 ~/.ssh/config
