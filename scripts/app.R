@@ -2,7 +2,7 @@
 
 # remove user library path to avoid confusion
 if(length(.libPaths())>1) .libPaths(.libPaths()[-1])
-run_nextflow <- TRUE
+run_nextflow <- FALSE
 library(shiny)
 library(GeneOverlap)
 library(gridExtra)
