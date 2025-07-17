@@ -1,5 +1,4 @@
 nextflow.config
-ref
 *\.sif
 **/outputs*
 fastq

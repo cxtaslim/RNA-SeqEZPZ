@@ -20,7 +20,7 @@
 date
 unset PYTHONPATH
 # set to false if not running for nextflow version
-run_nextflow=TRUE
+run_nextflow=FALSE
 # get command line arguments
 while [[ "$#" -gt 0 ]]; do
         if [[ $1 == "run"* ]];then
