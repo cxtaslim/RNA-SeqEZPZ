@@ -8,6 +8,7 @@ high_mem=128
 # memory in GB for jobs that require medium memory like feature counts
 med_mem=32
 # memory in GB for jobs that require very high memory like DESeq2 and SARTools
-very_high_mem=500
-
+very_high_mem=150
+# any additional sbatch options needed to run i.e. in OSC this is your -A <project-num>
+addtl_opt=""
 
