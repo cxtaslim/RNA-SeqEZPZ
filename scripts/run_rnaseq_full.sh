@@ -254,6 +254,7 @@ if [[ $skip_run_star_index == 0 ]];then
                 --job-name=run_star_index \
         	--wait \
 	        --export message="$message",proj_dir=$proj_dir \
+ 		$addtl_opt \
                 --wrap "echo -e \"$message\" >> $proj_dir/run_rnaseq_full.out; \
 						cp $proj_dir/run_rnaseq_full.out $log_dir/"| cut -f 4 -d' ')
 	# message if jobs never satisfied
