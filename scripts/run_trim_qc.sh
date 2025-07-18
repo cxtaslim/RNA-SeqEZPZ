@@ -222,6 +222,7 @@ for (( idx =0; idx <= len_row-1; idx++ ));do
 					--mail-type=FAIL \
 					--mail-user=$email \
 					--cpus-per-task=$ncpus_trim \
+					$addtl_opt \
 					--wrap "singularity exec \
 					--bind $img_dir/scripts:/scripts \
 					--bind $proj_dir:/mnt \
@@ -252,6 +253,7 @@ jid2=$(SINGULARITYENV_PYTHONPATH= \
 		--mail-user=$email \
 		--time=$time \
 		--dependency=afterok:$jid \
+		$addtl_opt \
 		--wrap "singularity exec \
 			--bind $proj_dir:/mnt \
 			--bind $img_dir/scripts:/scripts \
@@ -279,7 +281,8 @@ check_trim_jid=$($run sbatch \
         --parsable \
         --job-name=check_trim \
         --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        --wrap "bash $img_dir/scripts/check_job.sh")
+        $addtl_opt \
+	--wrap "bash $img_dir/scripts/check_job.sh")
 
 cp $proj_dir/run_trim_qc.out $log_dir/
 
@@ -291,6 +294,7 @@ tmp=$($run sbatch --dependency=afterok:$jid2 \
 		--mail-user=$email \
 		--job-name=run_trim_qc \
 		--export message="$message",proj_dir=$proj_dir \
+		$addtl_opt \
 		--wrap "echo -e \"$message\"$(date) >> $proj_dir/run_trim_qc.out"| cut -f 4 -d' ')
 
 # message if jobs never satisfied
@@ -310,6 +314,7 @@ check_multiqc_jid=$($run sbatch \
         --parsable \
         --job-name=check_multiqc \
         --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        --wrap "bash $img_dir/scripts/check_job.sh")
+        $addtl_opt \
+	--wrap "bash $img_dir/scripts/check_job.sh")
 
 cp $proj_dir/run_trim_qc.out $log_dir/

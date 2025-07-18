@@ -271,6 +271,7 @@ if [[ $skip_run_star_index == 0 ]];then
         --wait \
         --time=$time \
         --parsable \
+	$addtl_opt \
         --job-name=check_run_star_index \
         --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
         --wrap "bash $img_dir/scripts/check_job.sh")
@@ -316,7 +317,8 @@ if [[ $skip_run_trim_qc == 0 ]]; then
         cp run_trim_qc.out $log_dir/
 
         tmp1=$($run sbatch --dependency=afterok:$jid2 \
-                --partition=$general_partition \
+        	$addtl_opt \
+	        --partition=$general_partition \
 		--time=5:00 \
                 --output=$log_dir/dummy_run_trim_qc.txt \
                 --job-name=run_trim_qc \
@@ -333,7 +335,8 @@ jid_to_check=$check_jid2,$tmp1
 out_file=$proj_dir/run_rnaseq_full.out
 check_run_trim_jid=$($run sbatch \
         --partition=$general_partition \
-        --output=$log_dir/check_run_trim.out \
+        $addtl_opt \
+	--output=$log_dir/check_run_trim.out \
         --mail-type=END \
         --mail-user=$email \
         --wait \
@@ -385,6 +388,7 @@ if [[ $skip_run_align_create_tracks_rna == 0 ]]; then
                	--output=$log_dir/dummy_run_align_create_tracks_rna.txt \
                	--job-name=check_run_align \
 		--wait \
+		$addtl_opt \
                	--export message="$message",proj_dir=$proj_dir \
                	--wrap "echo -e \"$message\" >> $proj_dir/run_rnaseq_full.out" | cut -f 4 -d' ')
 fi
@@ -417,6 +421,7 @@ message="${message}See multiqc_report.html for summary of all QC metrics\n"
 message="${message}trim folder contains the trimmed fastq files\n\n"
 
 tmp=$($run sbatch --dependency=afterok:$jid8 \
+		$addtl_opt \
 		--partition=$general_partition \
 		--time=5:00 \
 		--output=$log_dir/dummy_run_differential_analysis_rna.txt \

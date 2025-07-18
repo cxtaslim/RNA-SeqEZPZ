@@ -282,6 +282,7 @@ jid0=$(SINGULARITYENV_PYTHONPATH= \
 			--mail-user=$email \
 			--job-name=star_index \
 			--time=$time \
+			$addtl_opt \
 			--wrap "singularity exec \
 				--bind $proj_dir:/mnt \
 				--bind $img_dir/scripts:/scripts \
@@ -310,6 +311,7 @@ check_star_index_jid=$($run sbatch \
         --parsable \
         --job-name=check_star_index \
         --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
+	$addtl_opt \
 	--wrap "bash $img_dir/scripts/check_job.sh")
 fi # skip run_star_index
 cp $proj_dir/samples.txt $log_dir/

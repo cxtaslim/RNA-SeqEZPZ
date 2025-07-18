@@ -192,6 +192,7 @@ for i in "${!groupname_array[@]}"; do
 			--job-name=featureCounts \
 			--time=$time \
 			--mem=${med_mem}G \
+			$addtl_opt \
 			--wrap "singularity exec \
 				--bind $proj_dir:/mnt \
 				--bind $img_dir/scripts:/scripts \
@@ -239,6 +240,7 @@ jid6=$(SINGULARITYENV_PYTHONPATH= \
 		--mem=$req_mem \
 		--time=$time \
 		--dependency=afterok:$jid5 \
+		$addtl_opt \
 		--wrap "singularity exec \
 			--bind $proj_dir:/mnt \
 			--bind $img_dir/scripts:/scripts \
@@ -264,7 +266,8 @@ check_feature_counts_jid=$($run sbatch \
         --parsable \
         --job-name=check_feature_counts \
         --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        --wrap "bash $img_dir/scripts/check_job.sh")
+        $addtl_opt \
+	--wrap "bash $img_dir/scripts/check_job.sh")
 
 cp $proj_dir/run_differential_analysis_rna.out $log_dir/
 
@@ -280,6 +283,7 @@ jid7=$(SINGULARITYENV_PYTHONPATH= \
 		--mail-user=$email \
 		--time=$time \
 		--dependency=afterok:$jid6 \
+		$addtl_opt \
 		--wrap "singularity exec \
 			--bind $proj_dir:/mnt \
 			--bind $img_dir/scripts:/scripts \
@@ -304,7 +308,8 @@ check_sartools_jid=$($run sbatch \
         --parsable \
         --job-name=check_sartools \
         --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        --wrap "bash $img_dir/scripts/check_job.sh")
+        $addtl_opt \
+	--wrap "bash $img_dir/scripts/check_job.sh")
 
 # delete intermediate bam files
 rm -r $proj_dir/outputs/STAR_2pass/Pass1 2> /dev/null || true
@@ -327,6 +332,7 @@ jid8=$($run sbatch --dependency=afterok:$jid7 \
 		--time=5:00 \
 		--job-name=run_differential_analysis_rna \
 		--export message="$message",proj_dir=$proj_dir \
+		$addtl_opt \
 		--wrap "echo -e \"$message\"$(date) >> $proj_dir/run_differential_analysis_rna.out"| cut -f 4 -d' ')
 # copy run_differential_analysis_rna.out to log_dir
 cp $proj_dir/run_differential_analysis_rna.out $log_dir/

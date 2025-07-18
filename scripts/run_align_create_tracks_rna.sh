@@ -287,6 +287,7 @@ for i in "${!groupname_array[@]}"; do
 			--mail-user=$email \
 			--job-name=star_pass1 \
 			--time=$time \
+			$addtl_opt \
 			--wrap "singularity exec \
 				--bind $proj_dir:/mnt \
 				--bind $img_dir/scripts:/scripts \
@@ -310,6 +311,7 @@ tmp=$($run sbatch \
 	--output=$log_dir/dummy.txt \
 	--job-name=after_star_pass1 \
 	--time=5:00 \
+	$addtl_opt \
 	--wrap "echo dummy sbatch to wait for STAR 1st pass to be finished"| cut -f 4 -d' ')
 
 # message if jobs never satisfied or cancelled
@@ -329,7 +331,8 @@ check_run_star_pass1_jid=$($run sbatch \
         --parsable \
         --job-name=check_star_pass1 \
         --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        --wrap "bash $img_dir/scripts/check_job.sh")
+        $addtl_opt \
+	--wrap "bash $img_dir/scripts/check_job.sh")
 
 # STAR second pass
 genomeForPass2=$work_dir/STAR_2pass/GenomeForPass2
@@ -391,6 +394,7 @@ for i in "${!groupname_array[@]}"; do
 				--job-name=star_pass2 \
 				--mem=${high_mem}G \
 				--time=$time \
+				$addtl_opt \
 				--wrap "singularity exec \
 					--bind $proj_dir:/mnt \
 					--bind $img_dir/scripts:/scripts \
@@ -421,6 +425,7 @@ if [[ n_rep -gt 1 ]]; then
 	--dependency=afterok:$jid4 \
 	--output=$log_dir/dummy.txt \
 	--time=5:00 \
+	$addtl_opt \
 	--wrap "echo dummy sbatch waiting for STAR 2nd pass to be finished"| cut -f 4 -d' ')
 
 	#message if jobs never satisfied or cancelled
@@ -441,7 +446,8 @@ if [[ n_rep -gt 1 ]]; then
         	--parsable \
         	--job-name=check_star_pass2 \
         	--export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        	--wrap "bash $img_dir/scripts/check_job.sh")
+        	$addtl_opt \
+		--wrap "bash $img_dir/scripts/check_job.sh")
 
 	# initialize job ids
 	jid4b=
@@ -474,6 +480,7 @@ if [[ n_rep -gt 1 ]]; then
 					--mail-user=$email \
 					--job-name=combinebw \
 					--time=$time \
+					$addtl_opt \
 					--wrap "singularity exec \
 						--bind $proj_dir:/mnt \
 						--bind $genome_dir:/ref \
@@ -498,6 +505,7 @@ if [[ n_rep -gt 1 ]]; then
 		--mail-user=$email \
 		--time=5:00 \
 		--job-name=run_align_create_tracks_rna \
+		$addtl_opt \
 		--wrap "echo dummy sbatch after combinebw is finished"| cut -f 4 -d' ')
 	# message if jobs never satisfied or canceled
 	check_jid4b=$(echo $jid4b | sed 's/:/,/g')
@@ -516,7 +524,8 @@ if [[ n_rep -gt 1 ]]; then
         --parsable \
         --job-name=check_combine \
         --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        --wrap "bash $img_dir/scripts/check_job.sh")
+        $addtl_opt \
+	--wrap "bash $img_dir/scripts/check_job.sh")
 else
 	echo There are no replicates
 	jid4c=$($run sbatch \
@@ -527,6 +536,7 @@ else
 		--mail-user=$email \
 		--time=5:00 \
 		--job-name=run_align_create_tracks_rna \
+		$addtl_opt \
 		--wrap "echo dummy sbatch after STAR 2nd pass is finished. There are no replicates"| cut -f 4 -d' ')
 	# message if jobs never satisfied or cancelled
 	check_jid4=$(echo $jid4 | sed 's/:/,/g')
@@ -545,7 +555,8 @@ else
         --parsable \
         --job-name=check_star_pass2 \
         --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        --wrap "bash $img_dir/scripts/check_job.sh")
+        $addtl_opt \
+	--wrap "bash $img_dir/scripts/check_job.sh")
 fi
 
 message="Done alignment using STAR 2-pass approach and created bw files for visualization\n\n\
@@ -565,6 +576,7 @@ tmp=$($run sbatch --dependency=afterok:$jid4c \
 		--time=5:00 \
 		--job-name=run_align_create_tracks_rna \
 		--export message="$message",proj_dir=$proj_dir \
+		$addtl_opt \
 		--wrap "echo -e \"$message\"$(date) >> $proj_dir/run_align_create_tracks_rna.out; \
 			cp $proj_dir/run_align_create_tracks_rna.out $log_dir/run_align_create_tracks_rna.out"| \
 			cut -f 4 -d' ')
