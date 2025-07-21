@@ -11,7 +11,7 @@ Please cite [[1]](#1) if you are using this pipeline for a publication.
 <br />
 
 ## Installation
-This pipeline uses Singularity image and Nextflow, which should make it easy to setup. However, the initial setup can sometimes be tricky. Please do not hesitate to create a new issue if you need help with installation or setup.
+This pipeline uses Singularity image, which should make it easy to setup. However, the initial setup can sometimes be tricky. Please do not hesitate to create a new issue if you need help with installation or setup.
 
 In order to use the pipeline, you will need to have Singularity installed in your HPC. See installation instruction at https://docs.sylabs.io/guides/3.0/user-guide/installation.html
 
