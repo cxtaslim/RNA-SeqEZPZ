@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # name of partition with high memory
-high_mem_partition=himem
+high_mem_partition=general
 # name of  partition for general use
 general_partition=general
 # memory in GB for jobs that require high memory like STAR
