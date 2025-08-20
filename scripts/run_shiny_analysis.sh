@@ -113,9 +113,9 @@ echo -e "\nUsing singularity image and scripts in:" ${img_dir} "\n"
 if [[ $run_nextflow == "TRUE" ]]; then
 # getting Nextflow configuration
 #skip load_nextflow line
-source <(grep -v "load_nextflow" scripts/nextflow_config_var.config )
+source <(grep -v "load_nextflow" $img_dir/scripts/nextflow_config_var.config )
 else
-source scripts/slurm_config_var.sh
+source $img_dir/scripts/slurm_config_var.sh
 fi
 
 echo -e "Options used to run:"
