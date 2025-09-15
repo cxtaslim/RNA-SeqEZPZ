@@ -421,7 +421,7 @@ done
 # if there are replicates, combine the bw files for each replicate
 n_rep=$(printf "%s\n" "${repname_array[@]}" | sort -u | wc -l)
 echo number of replicates $n_rep
-if [[ n_rep -gt 1 ]]; then
+if [[ ${n_rep} -gt 1 ]]; then
 	#echo There is replicates
 	#set -x
 	cd $work_dir
@@ -470,7 +470,10 @@ if [[ n_rep -gt 1 ]]; then
 		# find groupname
 		cd $proj_dir
 		#echo $chr_info
-		groupname=$(awk -v file=$file 'file ~ $1 {print $1;exit}' samples.txt)
+		# bug: missed filename that have the same substring in column 1 of samples.txt
+		# groupname=$(awk -v file=$file 'file ~ $1 {print $1;exit}' samples.txt)
+		# fix: match to start of column 1 of samples.txt
+		groupname=$(awk -v file="$file" 'index(file, $1) == 1 { print $1; exit }' samples.txt)
 		tmp_jid=$(SINGULARITYENV_PYTHONPATH= \
 		SINGULARITYENV_run=$run \
 				SINGULARITYENV_all_files_rep_cmd=$all_files_rep_cmd \
