@@ -133,14 +133,17 @@ img_name=rnaseq-pipe-container.sif
 # reference to run analysis are in $img_dir/ref
 
 echo -e "\nUsing singularity image and scripts in:" ${img_dir} "\n"
+REPO=${img_dir}  # set REPO
+GIT_SHA=$(git -C "$REPO" rev-parse --short=12 HEAD 2>/dev/null || echo "unknown")
+GIT_DESC=$(git -C "$REPO" describe --always --dirty --long --tags --abbrev=12 2>/dev/null || echo "unknown")
+echo "git_sha=${GIT_SHA}"
+echo "git_version=${GIT_DESC}"
 
 echo -e "Generating STAR genome index and get chromosome sizes file.\n"
 echo -e "Options used to run:"
 echo time="$time"
 echo genome="$ref_ver"
 echo ""
-
-
 
 skip_run_star_index=0
 ### specify reference genome
@@ -310,8 +313,9 @@ check_star_index_jid=$($run sbatch \
         --time=$time \
         --parsable \
         --job-name=check_star_index \
-        --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
 	$addtl_opt \
-	--wrap "bash $img_dir/scripts/check_job.sh")
+        --wrap "set -x; out_file='${out_file}' jid_to_check='${jid_to_check}' msg_ok='${msg_ok}' \
+		msg_fail='${msg_fail}' \
+		bash $img_dir/scripts/check_job.sh")
 fi # skip run_star_index
 cp $proj_dir/samples.txt $log_dir/

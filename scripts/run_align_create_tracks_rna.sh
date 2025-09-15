@@ -155,6 +155,11 @@ img_name=rnaseq-pipe-container.sif
 # reference to run analysis are in $img_dir/ref
 
 echo -e "\nUsing singularity image and scripts in:" ${img_dir} "\n"
+REPO=${img_dir}  # set REPO
+GIT_SHA=$(git -C "$REPO" rev-parse --short=12 HEAD 2>/dev/null || echo "unknown")
+GIT_DESC=$(git -C "$REPO" describe --always --dirty --long --tags --abbrev=12 2>/dev/null || echo "unknown")
+echo "git_sha=${GIT_SHA}"
+echo "git_version=${GIT_DESC}"
 
 # getting SLURM configuration
 source $img_dir/scripts/slurm_config_var.sh
@@ -330,9 +335,10 @@ check_run_star_pass1_jid=$($run sbatch \
         --time=$time \
         --parsable \
         --job-name=check_star_pass1 \
-        --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
         $addtl_opt \
-	--wrap "bash $img_dir/scripts/check_job.sh")
+        --wrap "set -x;out_file='${out_file}' jid_to_check='${jid_to_check}' msg_ok='${msg_ok}' \
+		msg_fail='${msg_fail}' \
+		bash $img_dir/scripts/check_job.sh")
 
 # STAR second pass
 genomeForPass2=$work_dir/STAR_2pass/GenomeForPass2
@@ -445,9 +451,10 @@ if [[ n_rep -gt 1 ]]; then
         	--time=$time \
         	--parsable \
         	--job-name=check_star_pass2 \
-        	--export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
         	$addtl_opt \
-		--wrap "bash $img_dir/scripts/check_job.sh")
+        	--wrap "set -x; out_file='${out_file}' jid_to_check='${jid_to_check}' \
+			msg_ok='${msg_ok}' msg_fail='${msg_fail}' \
+			bash $img_dir/scripts/check_job.sh")
 
 	# initialize job ids
 	jid4b=
@@ -523,9 +530,10 @@ if [[ n_rep -gt 1 ]]; then
         --time=$time \
         --parsable \
         --job-name=check_combine \
-        --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
         $addtl_opt \
-	--wrap "bash $img_dir/scripts/check_job.sh")
+        --wrap "set -x; out_file='${out_file}' jid_to_check='${jid_to_check}' \
+		msg_ok='${msg_ok}' msg_fail='${msg_fail}' \
+		bash $img_dir/scripts/check_job.sh")
 else
 	echo There are no replicates
 	jid4c=$($run sbatch \
@@ -554,9 +562,10 @@ else
         --time=$time \
         --parsable \
         --job-name=check_star_pass2 \
-        --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
         $addtl_opt \
-	--wrap "bash $img_dir/scripts/check_job.sh")
+        --wrap "set -x;out_file='${out_file}' jid_to_check='${jid_to_check}' \
+		msg_ok='${msg_ok}' msg_fail='${msg_fail}' \
+		bash $img_dir/scripts/check_job.sh")
 fi
 
 message="Done alignment using STAR 2-pass approach and created bw files for visualization\n\n\
@@ -575,9 +584,10 @@ tmp=$($run sbatch --dependency=afterok:$jid4c \
 		--mail-user=$email \
 		--time=5:00 \
 		--job-name=run_align_create_tracks_rna \
-		--export message="$message",proj_dir=$proj_dir \
+		--parsable \
 		$addtl_opt \
-		--wrap "echo -e \"$message\"$(date) >> $proj_dir/run_align_create_tracks_rna.out; \
-			cp $proj_dir/run_align_create_tracks_rna.out $log_dir/run_align_create_tracks_rna.out"| \
-			cut -f 4 -d' ')
+		--wrap "set -x; message='$message',proj_dir='${proj_dir}' \
+			echo -e '$message\n'$(date) >> ${proj_dir}/run_align_create_tracks_rna.out; \
+			cp ${proj_dir}/run_align_create_tracks_rna.out \
+				${log_dir}/run_align_create_tracks_rna.out")
 

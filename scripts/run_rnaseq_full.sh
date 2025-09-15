@@ -202,6 +202,12 @@ echo -e "\nUsing singularity image and scripts in:" ${img_dir} "\n"
 # scripts to run analysis are in $img_dir/scripts
 # reference to run analysis are in $img_dir/ref
 
+REPO=${img_dir}  # set REPO
+GIT_SHA=$(git -C "$REPO" rev-parse --short=12 HEAD 2>/dev/null || echo "unknown")
+GIT_DESC=$(git -C "$REPO" describe --always --dirty --long --tags --abbrev=12 2>/dev/null || echo "unknown")
+echo "git_sha=${GIT_SHA}"
+echo "git_version=${GIT_DESC}"
+
 # getting SLURM configuration
 source $img_dir/scripts/slurm_config_var.sh
 
@@ -253,10 +259,10 @@ if [[ $skip_run_star_index == 0 ]];then
                 --output=$log_dir/dummy_run_star_index.txt \
                 --job-name=run_star_index \
         	--wait \
-	        --export message="$message",proj_dir=$proj_dir \
  		$addtl_opt \
-                --wrap "echo -e \"$message\" >> $proj_dir/run_rnaseq_full.out; \
-						cp $proj_dir/run_rnaseq_full.out $log_dir/"| cut -f 4 -d' ')
+	        --wrap "set -x;message='$message' proj_dir='${proj_dir}' \
+                	echo -e '$message' >> $proj_dir/run_rnaseq_full.out; \
+			cp $proj_dir/run_rnaseq_full.out $log_dir/"| cut -f 4 -d' ')
 	# message if jobs never satisfied
 	check_jid0=$(echo $jid0 | sed 's/:/,/g')
 	# check to make sure jobs are completed. Print messages if not.
@@ -274,8 +280,9 @@ if [[ $skip_run_star_index == 0 ]];then
         --parsable \
 	$addtl_opt \
         --job-name=check_run_star_index \
-        --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        --wrap "bash $img_dir/scripts/check_job.sh")
+        --wrap "set -x; out_file='${out_file}' jid_to_check='${jid_to_check}' msg_ok='${msg_ok}' \
+		msg_fail='${msg_fail}' \
+        	bash $img_dir/scripts/check_job.sh")
 else
 	# message to run_rnaseq_full skipping run_star_index
 	echo -e "run_star_index.sh was not run since genome index already exists.\n"
@@ -323,9 +330,9 @@ if [[ $skip_run_trim_qc == 0 ]]; then
 		--time=5:00 \
                 --output=$log_dir/dummy_run_trim_qc.txt \
                 --job-name=run_trim_qc \
-                --export message="$message",proj_dir=$proj_dir \
-                --wrap "echo -e \"$message\" >> $proj_dir/run_rnaseq_full.out; \
-                cp $proj_dir/run_rnaseq_full.out $log_dir/"| cut -f 4 -d' ')
+                --wrap "set -x;message='$message' proj_dir='${proj_dir}' \
+                echo -e '$message' >> ${proj_dir}/run_rnaseq_full.out; \
+                cp ${proj_dir}/run_rnaseq_full.out ${log_dir}/"| cut -f 4 -d' ')
         # message if jobs never satisfied
         check_jid2=$(echo $jid2 | sed 's/:/,/g')
 # check to make sure jobs are completed. Print messages if not.
@@ -344,8 +351,9 @@ check_run_trim_jid=$($run sbatch \
         --time=$time \
         --parsable \
         --job-name=check_run_trim \
-        --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        --wrap "bash $img_dir/scripts/check_job.sh")
+        --wrap "set -x;out_file='${out_file}' jid_to_check='${jid_to_check}' \
+		msg_ok='${msg_ok}' msg_fail='$msg_fail' \
+        	bash $img_dir/scripts/check_job.sh")
 fi
 
 ### skip alignment if STAR pass2 is done
@@ -390,8 +398,8 @@ if [[ $skip_run_align_create_tracks_rna == 0 ]]; then
                	--job-name=check_run_align \
 		--wait \
 		$addtl_opt \
-               	--export message="$message",proj_dir=$proj_dir \
-               	--wrap "echo -e \"$message\" >> $proj_dir/run_rnaseq_full.out" | cut -f 4 -d' ')
+               	--wrap "set -x;message='$message' proj_dir='${proj_dir}' \
+               	echo -e '$message' >> ${proj_dir}/run_rnaseq_full.out" | cut -f 4 -d' ')
 fi
 
 ### Running differential genes analysis
@@ -429,8 +437,8 @@ tmp=$($run sbatch --dependency=afterok:$jid8 \
 		--mail-type=END \
 		--mail-user=$email \
 		--job-name=run_rnaseq_full \
-		--export message="$message",proj_dir=$proj_dir \
-		--wrap "echo -e \"$message\"$(date) >> $proj_dir/run_rnaseq_full.out; \
-		cp $proj_dir/run_rnaseq_full.out $log_dir/"| cut -f 4 -d' ')
+		--wrap "set -x;message='$message' proj_dir='${proj_dir}' \
+		echo -e '$message\n'$(date) >> ${proj_dir}/run_rnaseq_full.out; \
+		cp ${proj_dir}/run_rnaseq_full.out ${log_dir}/"| cut -f 4 -d' ')
 
 

@@ -131,6 +131,11 @@ img_name=rnaseq-pipe-container.sif
 # reference to run analysis are in $img_dir/ref
 
 echo -e "\nUsing singularity image and scripts in:" ${img_dir} "\n"
+REPO=${img_dir}  # set REPO
+GIT_SHA=$(git -C "$REPO" rev-parse --short=12 HEAD 2>/dev/null || echo "unknown")
+GIT_DESC=$(git -C "$REPO" describe --always --dirty --long --tags --abbrev=12 2>/dev/null || echo "unknown")
+echo "git_sha=${GIT_SHA}"
+echo "git_version=${GIT_DESC}"
 
 # getting SLURM configuration
 source $img_dir/scripts/slurm_config_var.sh
@@ -265,9 +270,9 @@ check_feature_counts_jid=$($run sbatch \
         --time=$time \
         --parsable \
         --job-name=check_feature_counts \
-        --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
         $addtl_opt \
-	--wrap "bash $img_dir/scripts/check_job.sh")
+        --wrap "out_file='$out_file' jid_to_check='$jid_to_check' msg_ok='$msg_ok' msg_fail='$msg_fail' \
+		bash $img_dir/scripts/check_job.sh")
 
 cp $proj_dir/run_differential_analysis_rna.out $log_dir/
 
@@ -307,9 +312,9 @@ check_sartools_jid=$($run sbatch \
         --time=$time \
         --parsable \
         --job-name=check_sartools \
-        --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
         $addtl_opt \
-	--wrap "bash $img_dir/scripts/check_job.sh")
+        --wrap "out_file='$out_file' jid_to_check='$jid_to_check' msg_ok='$msg_ok' msg_fail='$msg_fail' \
+		bash $img_dir/scripts/check_job.sh")
 
 # delete intermediate bam files
 rm -r $proj_dir/outputs/STAR_2pass/Pass1 2> /dev/null || true
@@ -331,9 +336,9 @@ jid8=$($run sbatch --dependency=afterok:$jid7 \
 		--mail-user=$email \
 		--time=5:00 \
 		--job-name=run_differential_analysis_rna \
-		--export message="$message",proj_dir=$proj_dir \
 		$addtl_opt \
-		--wrap "echo -e \"$message\"$(date) >> $proj_dir/run_differential_analysis_rna.out"| cut -f 4 -d' ')
+		--wrap "message='${message}' proj_dir='${proj_dir}' \
+		echo -e '$message\n'$(date) >> ${proj_dir}/run_differential_analysis_rna.out"| cut -f 4 -d' ')
 # copy run_differential_analysis_rna.out to log_dir
 cp $proj_dir/run_differential_analysis_rna.out $log_dir/
 

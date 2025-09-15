@@ -126,6 +126,11 @@ img_name=rnaseq-pipe-container.sif
 # reference to run analysis are in $img_dir/ref
 
 echo -e "\nUsing singularity image and scripts in:" ${img_dir} "\n"
+REPO=${img_dir}  # set REPO
+GIT_SHA=$(git -C "$REPO" rev-parse --short=12 HEAD 2>/dev/null || echo "unknown")
+GIT_DESC=$(git -C "$REPO" describe --always --dirty --long --tags --abbrev=12 2>/dev/null || echo "unknown")
+echo "git_sha=${GIT_SHA}"
+echo "git_version=${GIT_DESC}"
 
 # getting SLURM configuration
 source $img_dir/scripts/slurm_config_var.sh
@@ -268,7 +273,9 @@ msg_ok="Done trimming reads and quality control.\n\n"
 msg_ok="${msg_ok}Summary of quality control result is in $work_dir/trim/fastqc_rslt/multiqc_report.html\n"
 msg_ok="${msg_ok}Trimmed fastq files are in $work_dir/trim\n"
 msg_ok="$log_dir/multiqc.out contains the commands ran"
-msg_fail="Either trimming reads or running fastqc failed. Please check trim_fastqc_* files in $log_dir\n"
+msg_ok="multiqc was completed successfully.\n"
+msg_fail="Either trimming or fastqc or multiqc failed. Please check trim_fastqc_* files in $log_dir\n"
+msg_fail="Please check multiqc.out in $log_dir\n"
 jid_to_check=$check_jid,$jid2
 out_file=$proj_dir/run_trim_qc.out
 check_trim_jid=$($run sbatch \
@@ -280,41 +287,9 @@ check_trim_jid=$($run sbatch \
         --time=$time \
         --parsable \
         --job-name=check_trim \
-        --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
         $addtl_opt \
-	--wrap "bash $img_dir/scripts/check_job.sh")
+        --wrap "out_file='${out_file}' jid_to_check='${jid_to_check}' msg_ok='${msg_ok}' msg_fail='${msg_fail}' \
+	bash $img_dir/scripts/check_job.sh")
 
 cp $proj_dir/run_trim_qc.out $log_dir/
 
-tmp=$($run sbatch --dependency=afterok:$jid2 \
-		--partition=$general_partition \
-		--output=$log_dir/dummy.txt \
-		--time=5:00 \
-		--mail-type=END \
-		--mail-user=$email \
-		--job-name=run_trim_qc \
-		--export message="$message",proj_dir=$proj_dir \
-		$addtl_opt \
-		--wrap "echo -e \"$message\"$(date) >> $proj_dir/run_trim_qc.out"| cut -f 4 -d' ')
-
-# message if jobs never satisfied
-check_jid2=$(echo $jid2 | sed 's/:/,/g')
-# check to make sure jobs are completed. Print messages if not.
-msg_ok="multiqc was completed successfully.\n"
-msg_fail="multiqc failed. Please check multiqc.out in $log_dir\n"
-jid_to_check=$check_jid2,$tmp
-out_file=$proj_dir/run_trim_qc.out
-check_multiqc_jid=$($run sbatch \
-        --partition=$general_partition \
-        --output=$log_dir/check_multiqc.out \
-        --mail-type=END \
-        --mail-user=$email \
-        --wait \
-        --time=$time \
-        --parsable \
-        --job-name=check_multiqc \
-        --export=out_file="$out_file",jid_to_check="$jid_to_check",msg_ok="$msg_ok",msg_fail="$msg_fail" \
-        $addtl_opt \
-	--wrap "bash $img_dir/scripts/check_job.sh")
-
-cp $proj_dir/run_trim_qc.out $log_dir/
