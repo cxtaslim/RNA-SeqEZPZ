@@ -136,6 +136,7 @@ GIT_SHA=$(git -C "$REPO" rev-parse --short=12 HEAD 2>/dev/null || echo "unknown"
 GIT_DESC=$(git -C "$REPO" describe --always --dirty --long --tags --abbrev=12 2>/dev/null || echo "unknown")
 echo "git_sha=${GIT_SHA}"
 echo "git_version=${GIT_DESC}"
+echo ""
 
 # getting SLURM configuration
 source $img_dir/scripts/slurm_config_var.sh

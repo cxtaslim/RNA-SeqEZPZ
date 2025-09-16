@@ -14,6 +14,11 @@ while [ ${#state_jids[@]} -ne 0 ];do
 	jids_pending_arr=($(sacct -j $jids -Xn -Po jobid,state | \
 		grep -E "PENDING|RUNNING" | awk -F "|" '{print $1}'))
 	jids_pending=$(IFS=','; echo "${jids_pending_arr[*]}") 
+	# if nothing is pending exit early
+	if [[ -z "$jids_pending" ]]; then
+		# jobs completed exit early
+		break
+	fi
         # only squeue pending to avoid error
 	reason=($(squeue -j $jids_pending -o "%R" -h))
 	state=($(sacct -j $jids --format=state --noheader ))

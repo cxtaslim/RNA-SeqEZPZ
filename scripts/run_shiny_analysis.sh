@@ -39,6 +39,10 @@ while [[ "$#" -gt 0 ]]; do
                 max_nsamples=$(echo $1 | cut -d '=' -f 2)
                 shift
         fi
+	if [[ $1 == "memory"* ]];then
+                memory=$(echo $1 | cut -d '=' -f 2)
+                shift
+        fi
 
         if [[ $1 == "help" ]];then
 		echo ""
@@ -59,7 +63,11 @@ while [[ "$#" -gt 0 ]]; do
                 echo -e '\t 50 samples correspond to number of rows in samples.txt'
                 echo -e '\t NOT number of fastq files!'
                 echo -e '\t note: that max_nsamples only needed when running shiny app to run analysis'
-                echo run=echo
+                echo memory
+		echo -e '\tset the memory used for shiny app. Default to 1 cpu memory'
+		echo -e '\tset higher memory if you have more than 50 samples.'
+		echo -e '\tmemory=200g to request 200GB of memory.'
+		echo run=echo
                 echo -e "\tdo not run, echo all commands. Default is running all commands"
                 echo -e "\tif set to "debug", it will run with "set -x""
 		echo -e ""
@@ -88,7 +96,11 @@ fi
 if [[ -z "$max_nsamples" ]];then
         max_nsamples=50
 fi
-
+# if not requesting specific memory amount
+# will default to 1 cpu memory
+if [[ -z "$memory" ]];then
+        memory=
+fi
 proj_dir=$(pwd)
 cd $proj_dir
 
@@ -148,12 +160,18 @@ fi
 
 # Activate environment where shiny is installed and go to "app.R" directory
 export port_num filepath max_nsamples img_dir proj_dir img_name bind_filepath
+mem_flag=()
+if [[ -n ${memory:-} ]];then
+	mem_flag="--mem=$memory"
+fi
 jid=$(sbatch --time=$time \
 	--partition=$general_partition \
 	$addtl_opt \
+	$mem_flag \
+	--parsable \
 	--export=port_num,filepath,max_nsamples,img_dir,proj_dir,img_name,bind_filepath \
 	--output=run_shiny_analysis.out \
-	--wrap "/bin/sh $img_dir/scripts/run_listen_app.sh"| cut -f 4 -d' ')
+	--wrap "/bin/sh $img_dir/scripts/run_listen_app.sh")
 
 echo -e "\n\nYou need to have x11 display server such as Xming running.\n"
 
@@ -189,6 +207,8 @@ while true; do
 done
 
 # adding configuration to send signal every four minutes (240 secs)
+# save config so we can copy back when we're done
+cp ~/.ssh/config ~/.ssh/config.save
 echo -e "Host *\n ServerAliveInterval 240" >> ~/.ssh/config
 
 echo Please ignore \"Failed to open connection..\" message.
@@ -199,7 +219,7 @@ echo ""
 echo -e "After typing in your password, please wait until firefox appears ....\n"
 echo -e "It may take some time for firefox to be responsive as it tries to load all the data\n"
 sleep 5
-ssh -tX "$node" 'export port_num='"'$port_num'"'; 
+ssh -tX "$node" 'export port_num='"'$port_num'"';
         export img_dir='"'$img_dir'"'; \
         export img_name='"'$img_name'"'; \
 	export proj_dir='"'$proj_dir'"'; \
@@ -208,7 +228,7 @@ ssh -tX "$node" 'export port_num='"'$port_num'"';
 
 ## this should not be run until firefox is closed
 scancel $jid
-# deleting the last lines which is server alive text
-head -n -1 ~/.ssh/config > temp && cp temp ~/.ssh/config && rm temp
+# copying original config without server alive text
+cp ~/.ssh/config.save ~/.ssh/config
 # make permission stricter
 chmod 600 ~/.ssh/config

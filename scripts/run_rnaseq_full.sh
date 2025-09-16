@@ -253,7 +253,7 @@ cp run_rnaseq_full.out $log_dir/
 
 # skip checking job if not generating star index.
 if [[ $skip_run_star_index == 0 ]];then
-	tmp0=$($run sbatch --dependency=$jid0 \
+	tmp0=$($run sbatch --dependency=afterok:$jid0 \
 		--partition=$general_partition \
                 --time=5:00 \
                 --output=$log_dir/dummy_run_star_index.txt \
