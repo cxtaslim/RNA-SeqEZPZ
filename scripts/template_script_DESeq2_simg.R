@@ -52,6 +52,7 @@ library(fdrtool)
 library(tibble)
 library(EnsDb.Hsapiens.v86)
 library(Polychrome)
+library(scales) # hue_pal()
 
 # using modified exportResults.DESeq2 to output gene names
 source(file.path(scriptDir,'exportResults.DESeq2.R'))
@@ -169,8 +170,9 @@ target <- loadTargetFile(targetFile=targetFile, varInt=varInt, condRef=condRef, 
 
 # vector of colors for each group or condition
 ngroup=length(levels(target[,varInt]));
-if(ngroup<=3){
-	colors<-c("#ADD8E6","#FFA500","#C71585")
+if(ngroup<=5){
+	#colors<-c("#ADD8E6","#FFA500","#C71585")
+	colors <- scales::hue_pal()(ngroup)
 }else if (ngroup<=12){
 	# library(colorspace)
 	# colors<-qualitative_hcl(ngroup,palette="Dark 3")
