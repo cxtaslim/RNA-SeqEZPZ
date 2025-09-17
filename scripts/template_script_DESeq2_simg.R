@@ -169,7 +169,7 @@ target <- loadTargetFile(targetFile=targetFile, varInt=varInt, condRef=condRef, 
 
 # vector of colors for each group or condition
 ngroup=length(levels(target[,varInt]));
-if(ngroup==3){
+if(ngroup<=3){
 	colors<-c("#ADD8E6","#FFA500","#C71585")
 }else if (ngroup<=12){
 	# library(colorspace)

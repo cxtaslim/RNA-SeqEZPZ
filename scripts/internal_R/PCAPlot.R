@@ -31,6 +31,8 @@ PCAPlot <- function (object, group=NULL,counts.trans,varInt,typeTrans, ntop = mi
   
   pcaData <- DESeq2::plotPCA(deseq.trans, intgroup = varInt ,ntop=ntop,returnData=TRUE)
   pcaData$rep <- colData(deseq.trans)[,"rep"]
+  # as factor so rep1 is not followed by rep10
+  pcaData$rep <- factor(pcaData$rep,levels=gtools::mixedsort(unique(pcaData$rep)))	
   percentVar <- round(100 * attr(pcaData, "percentVar"))
   ngroup=length(unique(group))
   # shape values for plotting
@@ -38,7 +40,7 @@ PCAPlot <- function (object, group=NULL,counts.trans,varInt,typeTrans, ntop = mi
   if(!is.null(batch)) {
     pcaData$batch = colData(deseq.trans)[,batch]
     p<-ggplot(pcaData, aes(x = PC1, y = PC2, color = group, shape = batch)) +
-      geom_point(size =5) +
+      geom_point(size =4,stroke=2) +
       xlab(paste0("PC1: ", percentVar[1], "% variance")) +
       ylab(paste0("PC2: ", percentVar[2], "% variance")) +
       # coord_fixed() +
@@ -50,12 +52,14 @@ PCAPlot <- function (object, group=NULL,counts.trans,varInt,typeTrans, ntop = mi
       # make group legend on top
       guides(
        color =	guide_legend(order = 1),
-       shape =	guide_legend(order =2)
+       shape =	guide_legend(order =2,
+		# shrink shape on legend so they don't overlap
+                override.aes=list(size=3,stroke=2))
       )
 
   } else{
     p<-ggplot(pcaData, aes(x = PC1, y = PC2, color = group,shape=rep)) +
-      geom_point(size =5) +
+      geom_point(size =4,stroke=2) +
       xlab(paste0("PC1: ", percentVar[1], "% variance")) +
       ylab(paste0("PC2: ", percentVar[2], "% variance")) +
      # coord_fixed() +
@@ -67,7 +71,9 @@ PCAPlot <- function (object, group=NULL,counts.trans,varInt,typeTrans, ntop = mi
       # make group legend on top
       guides(
 	color = guide_legend(order = 1),
-        shape = guide_legend(order =2)
+        shape = guide_legend(order =2,
+		# shrink shape on legend so they don't overlap
+		override.aes=list(size=3,stroke=2))
       )     
   }
   print(p)
